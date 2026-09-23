@@ -35,6 +35,10 @@ export function halfOf(ym: string): Half {
 
 const round = (v: number) => Math.round(v);
 
+export function payDayLabel(day: number): string {
+  return day >= 1 && day <= 31 ? `${Math.round(day)}日` : "末日";
+}
+
 // ---------------------------------------------------------------- 事業部PL
 
 export interface DeptMonthPL {
@@ -190,7 +194,8 @@ export interface IncentiveItem {
   label: string;
   earned_month: string;
   pay_month: string;
-  pay_day: "末日" | "15日";
+  /** 表示用の支給日（"末日" / "15日" など） */
+  pay_day: string;
   amount: number;
   basis: string;
 }
@@ -199,7 +204,7 @@ export function findLeader(db: Database, dept: Dept): Member | undefined {
   return db.members.find((m) => m.department === dept && m.role === "LEADER" && m.is_active);
 }
 
-/** 指定月に「発生」したインセンティブ（支給は翌月末・翌々月15日など） */
+/** 指定月に「発生」したインセンティブ（支給月・支給日は設定パラメータで変更可能） */
 export function computeIncentivesEarned(db: Database, month: string, params = buildParams(db.params)): IncentiveItem[] {
   const items: IncentiveItem[] = [];
 
@@ -213,7 +218,7 @@ export function computeIncentivesEarned(db: Database, month: string, params = bu
       kind: "BAR",
       label: "BARインセンティブ",
       earned_month: month,
-      pay_month: addMonths(month, 1),
+      pay_month: addMonths(month, params.sales_bar_pay_offset),
       pay_day: "末日",
       amount: round(sales.barSales * params.sales_bar_inc_rate),
       basis: `BAR売上 ${yen(sales.barSales)} × ${pct(params.sales_bar_inc_rate)}（事業部利益 ${yen(sales.op)} ≥ ${yen(params.sales_bar_inc_threshold)}）`,
@@ -230,7 +235,7 @@ export function computeIncentivesEarned(db: Database, month: string, params = bu
       kind: "HR_PLACEMENT",
       label: `決定手当（${isRef ? "リファーラル" : "広告・自社"}）`,
       earned_month: month,
-      pay_month: addMonths(month, 1),
+      pay_month: addMonths(month, params.hr_placement_pay_offset),
       pay_day: "末日",
       amount: isRef ? params.hr_placement_ref_fee : params.hr_placement_ad_fee,
       basis: t.title,
@@ -247,8 +252,8 @@ export function computeIncentivesEarned(db: Database, month: string, params = bu
       kind: "LOGI_MONTHLY",
       label: "大和利益インセンティブ（月次分）",
       earned_month: month,
-      pay_month: addMonths(month, 2),
-      pay_day: "15日",
+      pay_month: addMonths(month, params.logi_inc_pay_offset),
+      pay_day: payDayLabel(params.logi_inc_pay_day),
       amount: round(logi.op * params.logi_inc_monthly_rate),
       basis: `大和利益 ${yen(logi.op)} × ${pct(params.logi_inc_monthly_rate)}`,
     });
@@ -308,7 +313,7 @@ export function computeHalfBonuses(db: Database, half: Half, throughMonth: strin
   const items: HalfBonusItem[] = [];
   const months = HALF_MONTHS[half];
   const actualMonths = months.filter((m) => m <= throughMonth);
-  const payMonth = addMonths(months[months.length - 1], 1);
+  const payMonth = addMonths(months[months.length - 1], params.half_bonus_pay_offset);
 
   // イベント営業: 事業部利益×10% − 支給済BARインセン ＋ 目標超過分×20%
   const salesLeader = findLeader(db, "SALES");

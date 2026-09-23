@@ -1,9 +1,10 @@
 "use client";
 
 import { Badge, Card, CardHeader, Progress, RateBadge, T } from "@/components/ui";
-import { HALF_LABEL, type Half } from "@/lib/constants";
+import { HALF_LABEL, HALF_MONTHS, type Half } from "@/lib/constants";
 import { cn } from "@/lib/cn";
 import { monthLabel, rate, signedYen, yen } from "@/lib/format";
+import { addMonths } from "@/lib/finance-engine";
 import type { DashboardData } from "@/lib/view-model";
 import { CumulativeOPChart, DailyBarsChart, DailyCumulativeChart, MonthlySalesChart } from "./charts";
 
@@ -27,7 +28,7 @@ export function TrendTab({ data, onSelectMonth, onOpenMonth }: { data: Dashboard
             <Card key={h} className="p-5">
               <div className="flex items-center justify-between text-xs font-semibold text-muted">
                 <span>{HALF_LABEL[h]} 売上実績</span>
-                <Badge tone={h === "H1" ? "brand" : "violet"}>ボーナス清算 {h === "H1" ? "2027年2月" : "2027年8月"}</Badge>
+                <Badge tone={h === "H1" ? "brand" : "violet"}>ボーナス清算 {monthLabel(addMonths(HALF_MONTHS[h][5], data.rules.half_bonus_pay_offset ?? 1))}</Badge>
               </div>
               <div className="mt-1 text-2xl font-black tabular-nums">{yen(x.sales)}</div>
               <div className="mt-3 space-y-1 border-t border-line pt-2 text-xs text-soft">

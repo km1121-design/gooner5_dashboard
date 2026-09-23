@@ -169,7 +169,7 @@ function MemberDetail({ data, s }: { data: DashboardData; s: MemberSummary }) {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader title="当月に発生したインセンティブ" description="発生月と支給月は異なります（翌月末・翌々月15日など）" />
+          <CardHeader title="当月に発生したインセンティブ" description="発生月と支給月は異なります（支給時期はマスター設定の規程に従います）" />
           {s.earnedThisMonth.length ? (
             <ul className="divide-y divide-line text-xs">
               {s.earnedThisMonth.map((i) => (

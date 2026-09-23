@@ -1,4 +1,6 @@
 import { canEditMaster } from "@/lib/access";
+import { authMode } from "@/lib/auth";
+import { normalizeEmail } from "@/lib/session";
 import { ALL_DEPTS } from "@/lib/constants";
 import { getRepository } from "@/lib/db/repository";
 import { handle, HttpError, num, oneOf, requireUser, str, ym } from "@/lib/server/context";
@@ -49,6 +51,15 @@ export async function PUT(request: Request) {
       const current = (await repo.load()).members;
       const merged = [...current.filter((c) => !members.some((m) => m.member_id === c.member_id)), ...members];
       if (!merged.some((m) => m.role === "ADMIN" && m.is_active)) throw new HttpError(400, "有効な ADMIN が1名以上必要です");
+      const emails = merged.filter((m) => m.is_active && m.email).map((m) => normalizeEmail(m.email));
+      const dup = emails.find((e, i) => emails.indexOf(e) !== i);
+      if (dup) throw new HttpError(400, `メールアドレス ${dup} が複数のメンバーに登録されています`);
+      if (authMode() === "google") {
+        const self = merged.find((m) => m.member_id === me.member_id);
+        if (!self?.is_active || self.role !== "ADMIN" || normalizeEmail(self.email) !== normalizeEmail(me.email)) {
+          throw new HttpError(400, "自分自身の権限・メール・在籍を変更するとログインできなくなるため、他の ADMIN に依頼してください");
+        }
+      }
       await repo.upsert("members", members);
     }
     return Response.json({ ok: true });

@@ -1,11 +1,11 @@
 "use client";
 
-import { Plus, Save } from "lucide-react";
+import { ExternalLink, Plus, RotateCcw, Save } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Badge, Button, Card, CardHeader, T } from "@/components/ui";
-import { ALL_DEPTS, BUSINESS_DEPTS, DEPT_META, TERM_MONTHS } from "@/lib/constants";
+import { ALL_DEPTS, BUSINESS_DEPTS, DEPT_META, PARAM_DEF_BY_KEY, PARAM_GROUPS, TERM_MONTHS, type ParamDef } from "@/lib/constants";
 import { cn } from "@/lib/cn";
-import { yen } from "@/lib/format";
+import { payTiming, yen } from "@/lib/format";
 import type { BusinessDept, ConfigParam, Member, MonthlyPlan } from "@/lib/types";
 import type { DashboardData } from "@/lib/view-model";
 import { api } from "./api";
@@ -75,7 +75,13 @@ export function MasterTab({ data, onSaved, notify }: { data: DashboardData; onSa
       <Card className="flex flex-wrap items-center justify-between gap-3 p-5">
         <div>
           <h2 className="text-lg font-black">マスター管理・条件設定</h2>
-          <p className="mt-0.5 text-xs text-muted">事業計画・料率・メンバー（基本給）を変更できます。保存するとスプレッドシートに書き込まれ、全画面の計算に即時反映されます。</p>
+          <p className="mt-0.5 text-xs text-muted">事業計画・料率・支給時期・メンバー（基本給）を変更できます。保存するとスプレッドシートに書き込まれ、全画面の計算に即時反映されます。</p>
+          {master.sheetUrl && (
+            <a href={master.sheetUrl} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline">
+              スプレッドシートを直接開く（一括編集・コピペ向け）
+              <ExternalLink size={12} />
+            </a>
+          )}
         </div>
         <Button onClick={save} disabled={!dirtyCount || saving}>
           <Save size={15} />
@@ -130,46 +136,26 @@ export function MasterTab({ data, onSaved, notify }: { data: DashboardData; onSa
         </div>
       </Card>
 
-      <Card>
-        <CardHeader title="2. 設定パラメータ（固定費・料率・閾値）" description="03_M_設定パラメータ。率は小数（10% = 0.1）で入力します" />
-        <div className={T.wrap}>
-          <table className={T.table}>
-            <thead className={T.thead}>
-              <tr>
-                <th className={T.th}>説明</th>
-                <th className={T.th}>キー</th>
-                <th className={cn(T.th, "text-right")}>設定値</th>
-              </tr>
-            </thead>
-            <tbody className={T.tbody}>
-              {params.map((p) => (
-                <tr key={p.config_key} className={cn(T.tr, dirty.params.has(p.config_key) && "bg-warn/10")}>
-                  <td className={cn(T.td, "font-semibold text-ink")}>{p.description}</td>
-                  <td className={cn(T.td, "font-mono text-muted")}>{p.config_key}</td>
-                  <td className={cn(T.td, "text-right")}>
-                    <input
-                      type="number"
-                      step="any"
-                      className={numCls}
-                      value={p.config_value}
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        setParams((ps) => ps.map((x) => (x.config_key === p.config_key ? { ...x, config_value: v } : x)));
-                        mark("params", p.config_key);
-                      }}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      <ParamsEditor
+        params={params}
+        dirty={dirty.params}
+        onChange={(key, v) => {
+          setParams((ps) => ps.map((x) => (x.config_key === key ? { ...x, config_value: v } : x)));
+          mark("params", key);
+        }}
+      />
 
       <Card>
         <CardHeader
           title="3. メンバーマスタ（権限・基本給）"
-          description="01_M_メンバー。email は本番ログイン（Googleアカウント）との紐付けに使います"
+          description={
+            <>
+              01_M_メンバー。email に登録した Google アカウントでログインできます
+              {members.some((m) => m.is_active && !m.email.trim()) && (
+                <span className="ml-1 font-bold text-warn-ink">※ メール未登録の在籍メンバーはログインできません</span>
+              )}
+            </>
+          }
           action={
             <Button size="sm" variant="secondary" onClick={addMember}>
               <Plus size={14} />
@@ -269,5 +255,84 @@ function PlanCells({ p, onChange, dirty }: { p: MonthlyPlan; onChange: (f: "targ
         <input type="number" className={cn(numCls, "text-good")} value={p.target_op} onChange={(e) => onChange("target_op", Number(e.target.value))} />
       </td>
     </>
+  );
+}
+
+// ---------------------------------------------------------------- 設定パラメータ編集
+
+function toDisplay(def: ParamDef | undefined, v: number) {
+  return def?.unit === "rate" ? Math.round(v * 100000) / 1000 : v;
+}
+
+function fromDisplay(def: ParamDef | undefined, v: number) {
+  return def?.unit === "rate" ? Math.round(v * 1000) / 100000 : v;
+}
+
+const UNIT_SUFFIX: Record<ParamDef["unit"], string> = { yen: "円", rate: "%", months: "ヶ月後", day: "日" };
+
+function describe(def: ParamDef, v: number) {
+  if (def.unit === "yen") return yen(v);
+  if (def.unit === "rate") return `${toDisplay(def, v)}%`;
+  if (def.unit === "months") return payTiming(v);
+  return v >= 1 && v <= 31 ? `${v}日` : "末日";
+}
+
+function ParamsEditor({ params, dirty, onChange }: { params: ConfigParam[]; dirty: Set<string>; onChange: (key: string, v: number) => void }) {
+  const groups = [...PARAM_GROUPS, "その他" as const].map((g) => ({
+    group: g,
+    rows: params.filter((p) => (PARAM_DEF_BY_KEY[p.config_key]?.group ?? "その他") === g),
+  }));
+  return (
+    <Card>
+      <CardHeader
+        title="2. 設定パラメータ（固定費・料率・閾値・支給時期）"
+        description="03_M_設定パラメータ。率は % で入力します（10% → 10）。変更した行は黄色になり、「変更を保存」で確定します"
+      />
+      <div className="grid gap-x-8 gap-y-6 p-5 lg:grid-cols-2">
+        {groups
+          .filter((g) => g.rows.length)
+          .map((g) => (
+            <div key={g.group}>
+              <h3 className="mb-2 border-b border-line pb-1 text-xs font-bold text-soft">{g.group}</h3>
+              <div className="space-y-1">
+                {g.rows.map((p) => {
+                  const def = PARAM_DEF_BY_KEY[p.config_key];
+                  const changedFromDefault = def && def.value !== p.config_value;
+                  return (
+                    <div key={p.config_key} className={cn("flex items-center gap-3 rounded-lg px-2 py-1.5", dirty.has(p.config_key) && "bg-warn/10")}>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-xs font-semibold text-ink" title={p.config_key}>
+                          {def?.description ?? p.description ?? p.config_key}
+                        </div>
+                        {def && changedFromDefault && <div className="text-[11px] text-muted">既定値: {describe(def, def.value)}</div>}
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <input
+                          type="number"
+                          step="any"
+                          className={cn(numCls, def?.unit === "months" || def?.unit === "day" ? "w-16" : "w-32")}
+                          value={toDisplay(def, p.config_value)}
+                          onChange={(e) => onChange(p.config_key, fromDisplay(def, Number(e.target.value)))}
+                          aria-label={def?.description ?? p.config_key}
+                        />
+                        <span className="w-10 text-[11px] text-muted">{def ? UNIT_SUFFIX[def.unit] : ""}</span>
+                        <button
+                          type="button"
+                          className={cn("rounded p-1 text-muted hover:bg-subtle hover:text-ink", !changedFromDefault && "invisible")}
+                          title="既定値に戻す"
+                          aria-label="既定値に戻す"
+                          onClick={() => def && onChange(p.config_key, def.value)}
+                        >
+                          <RotateCcw size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+      </div>
+    </Card>
   );
 }

@@ -23,7 +23,11 @@ export async function requireUser(): Promise<{ db: Database; me: Member }> {
   const db = await getRepository().load();
   const me = await getCurrentUser(db);
   if (!me) {
-    throw new HttpError(401, authMode() === "dev" ? "メンバーが登録されていません" : "認証が設定されていません（AUTH_MODE を確認してください）");
+    const mode = authMode();
+    throw new HttpError(
+      401,
+      mode === "google" ? "ログインしてください" : mode === "dev" ? "メンバーが登録されていません" : "認証が設定されていません（README のログイン設定を確認してください）",
+    );
   }
   return { db, me };
 }

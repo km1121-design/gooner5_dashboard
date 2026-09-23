@@ -4,7 +4,7 @@ import { ArrowRightLeft, Plus, Receipt } from "lucide-react";
 import { Badge, Button, Card, CardHeader, Empty, Progress, RateBadge, StatCard, T } from "@/components/ui";
 import { DEPT_META } from "@/lib/constants";
 import { cn } from "@/lib/cn";
-import { monthLabel, rate, yen } from "@/lib/format";
+import { monthLabel, payTiming, rate, yen } from "@/lib/format";
 import type { BusinessDept } from "@/lib/types";
 import type { DashboardData } from "@/lib/view-model";
 import { memberName, StatusBadge, TxTable } from "./shared";
@@ -40,7 +40,7 @@ export function DeptTab({
     const fired = pl.op >= threshold;
     special = (
       <StatCard
-        label="BARインセン（翌月末支給）"
+        label={`BARインセン（${payTiming(R.sales_bar_pay_offset)}支給）`}
         value={yen(fired ? pl.barSales * R.sales_bar_inc_rate : 0)}
         valueClass={fired ? "text-warn-ink" : "text-faint"}
         footer={
@@ -69,7 +69,7 @@ export function DeptTab({
         label={`運送統括 ${pct(R.logi_inc_rate)}インセン`}
         value={yen(Math.max(0, pl.op) * R.logi_inc_rate)}
         valueClass="text-good"
-        footer={`${pct(R.logi_inc_monthly_rate)} 翌々月15日 / ${pct(R.logi_inc_rate - R.logi_inc_monthly_rate)} 半期プール`}
+        footer={`${pct(R.logi_inc_monthly_rate)} ${payTiming(R.logi_inc_pay_offset, R.logi_inc_pay_day)} / ${pct(R.logi_inc_rate - R.logi_inc_monthly_rate)} 半期プール`}
       />
     );
   }
@@ -155,20 +155,20 @@ export function DeptTab({
           <div className="space-y-2 p-5 text-xs leading-relaxed text-soft">
             {dept === "SALES" && (
               <>
-                <p>• <b className="text-ink">BARインセン</b>: 単月事業部営業利益が {yen(R.sales_bar_inc_threshold)} 以上の月、BAR売上の {pct(R.sales_bar_inc_rate)} を翌月末支給。</p>
+                <p>• <b className="text-ink">BARインセン</b>: 単月事業部営業利益が {yen(R.sales_bar_inc_threshold)} 以上の月、BAR売上の {pct(R.sales_bar_inc_rate)} を{payTiming(R.sales_bar_pay_offset)}支給。</p>
                 <p>• <b className="text-ink">半期ボーナス</b>: 半期事業部営業利益の {pct(R.sales_half_base_rate)} から支給済BARインセンを控除。目標超過分はさらに {pct(R.sales_half_excess_rate)} を加算。</p>
                 <p>• <b className="text-ink">リファーラル</b>: 転職支援は紹介元 {pct(R.ref_split_hr_default)}、引越しは {pct(R.ref_split_moving_default)} を計上。</p>
               </>
             )}
             {dept === "HR" && (
               <>
-                <p>• <b className="text-ink">決定手当</b>: 入社決定1件ごとに 広告・自社経由 {yen(R.hr_placement_ad_fee)} ／ リファーラル経由 {yen(R.hr_placement_ref_fee)} を翌月末支給。</p>
+                <p>• <b className="text-ink">決定手当</b>: 入社決定1件ごとに 広告・自社経由 {yen(R.hr_placement_ad_fee)} ／ リファーラル経由 {yen(R.hr_placement_ref_fee)} を{payTiming(R.hr_placement_pay_offset)}支給。</p>
                 <p>• <b className="text-ink">事業部ボーナス（統括）</b>: 半期事業部営業利益の {pct(R.hr_dept_bonus_rate)}、目標超過分は {pct(R.hr_dept_bonus_excess_rate)}。</p>
                 <p>• <b className="text-ink">個人PLボーナス</b>: 個人営業利益（個人売上 − MK{pct(R.hr_masterkey_rate)} − 直接経費 − 月 {yen(R.hr_personal_fixed_cost)} 配賦）の {pct(R.hr_personal_bonus_rate)}。</p>
               </>
             )}
             {dept === "LOGI" && (
-              <p>• <b className="text-ink">大和利益インセン</b>: 事業部営業利益の {pct(R.logi_inc_rate)}。うち {pct(R.logi_inc_monthly_rate)} を翌々月15日支給、残りを半期プール。</p>
+              <p>• <b className="text-ink">大和利益インセン</b>: 事業部営業利益の {pct(R.logi_inc_rate)}。うち {pct(R.logi_inc_monthly_rate)} を{payTiming(R.logi_inc_pay_offset, R.logi_inc_pay_day)}支給、残りを半期プール。</p>
             )}
             {leaderSummary && leaderItems.length > 0 && (
               <div className="mt-3 rounded-lg bg-subtle p-3">

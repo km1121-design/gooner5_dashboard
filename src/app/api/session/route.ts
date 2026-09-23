@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { authMode, SESSION_COOKIE } from "@/lib/auth";
+import { authMode, DEV_COOKIE } from "@/lib/auth";
 import { getRepository } from "@/lib/db/repository";
 import { handle, HttpError, str } from "@/lib/server/context";
 
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     const id = str(body.member_id, "member_id", { required: true });
     const db = await getRepository().load();
     if (!db.members.some((m) => m.member_id === id && m.is_active)) throw new HttpError(404, "メンバーが見つかりません");
-    (await cookies()).set(SESSION_COOKIE, id, { httpOnly: true, sameSite: "lax", path: "/" });
+    (await cookies()).set(DEV_COOKIE, id, { httpOnly: true, sameSite: "lax", path: "/" });
     return Response.json({ ok: true });
   });
 }

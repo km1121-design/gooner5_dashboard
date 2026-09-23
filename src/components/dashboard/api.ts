@@ -25,6 +25,11 @@ export function useDashboard(month: string | null) {
     setLoading(true);
     try {
       const res = await fetch(`/api/dashboard${month ? `?month=${month}` : ""}`, { cache: "no-store" });
+      if (res.status === 401) {
+        // セッション切れ・未ログインはログイン画面へ
+        window.location.assign(new URL("/login", window.location.origin));
+        return;
+      }
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
       if (id === seq.current) {

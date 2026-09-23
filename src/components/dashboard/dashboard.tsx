@@ -18,6 +18,7 @@ import {
   Wine,
   LineChart as LineIcon,
   ClipboardCheck,
+  LogOut,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button, Empty } from "@/components/ui";
@@ -169,6 +170,13 @@ export function Dashboard() {
               <button className="rounded-lg p-2 text-muted hover:bg-subtle hover:text-ink" onClick={() => setTheme(isDark ? "light" : "dark")} title="テーマ切替" aria-label="テーマ切替">
                 {isDark ? <Sun size={16} /> : <Moon size={16} />}
               </button>
+              {data.authMode === "google" && (
+                <form action="/api/auth/logout" method="post">
+                  <button type="submit" className="rounded-lg p-2 text-muted hover:bg-subtle hover:text-ink" title="ログアウト" aria-label="ログアウト">
+                    <LogOut size={16} />
+                  </button>
+                </form>
+              )}
               {data.scope.length > 0 && (
                 <button className="rounded-lg p-2 text-muted hover:bg-subtle hover:text-ink" onClick={toggleMeeting} title="会議モード（全画面・拡大表示）" aria-label="会議モード">
                   {meeting ? <Minimize2 size={16} /> : <Maximize2 size={16} />}

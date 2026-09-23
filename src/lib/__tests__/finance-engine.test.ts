@@ -141,3 +141,29 @@ describe("member summary", () => {
     expect(s.personalSales).toBe(480000 + 500000);
   });
 });
+
+describe("configurable payment timing", () => {
+  it("pay offsets and day come from parameters", () => {
+    const d = db();
+    d.params.push({ config_key: "sales_bar_pay_offset", config_value: 2, description: "" });
+    d.params.push({ config_key: "logi_inc_pay_offset", config_value: 1, description: "" });
+    d.params.push({ config_key: "logi_inc_pay_day", config_value: 0, description: "" });
+    d.params.push({ config_key: "half_bonus_pay_offset", config_value: 2, description: "" });
+    const items = computeIncentivesEarned(d, "2026-08");
+    expect(items.find((i) => i.kind === "BAR")!.pay_month).toBe("2026-10");
+    const logi = items.find((i) => i.kind === "LOGI_MONTHLY")!;
+    expect(logi.pay_month).toBe("2026-09");
+    expect(logi.pay_day).toBe("末日");
+    expect(computeHalfBonuses(d, "H1", "2026-08", false)[0].pay_month).toBe("2027-03");
+  });
+
+  it("every default parameter has metadata for the settings screen", async () => {
+    const { DEFAULT_PARAMS, PARAM_GROUPS } = await import("../constants");
+    const keys = new Set<string>();
+    for (const p of DEFAULT_PARAMS) {
+      expect(PARAM_GROUPS).toContain(p.group);
+      expect(keys.has(p.key)).toBe(false);
+      keys.add(p.key);
+    }
+  });
+});

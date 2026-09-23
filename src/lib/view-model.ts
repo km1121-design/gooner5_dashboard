@@ -20,6 +20,8 @@ import {
 } from "./finance-engine";
 import type { ConfigParam, CrossReferral, Database, Dept, ExpenseTransaction, Member, MonthlyPlan, SalesTransaction } from "./types";
 
+export type AuthMode = "dev" | "google" | "locked";
+
 export interface TrendPoint {
   month: string;
   short: string;
@@ -52,7 +54,7 @@ export interface DashboardData {
   today: string;
   month: string;
   dataSource: "sheets" | "local";
-  authMode: "dev" | "locked";
+  authMode: AuthMode;
   me: Member;
   permissions: { master: boolean; approve: boolean; companyView: boolean };
   scope: Dept[];
@@ -70,7 +72,7 @@ export interface DashboardData {
   summaries: MemberSummary[];
   team: TeamRow[];
   annualTarget: { min: number; stretch: number } | null;
-  master: { plans: MonthlyPlan[]; params: ConfigParam[]; members: Member[] } | null;
+  master: { plans: MonthlyPlan[]; params: ConfigParam[]; members: Member[]; sheetUrl: string | null } | null;
   /** dev モードの視点切替用 */
   switchableMembers: PublicMember[];
   categories: Record<string, number>;
@@ -84,7 +86,7 @@ export function buildDashboard(
   db: Database,
   me: Member,
   month: string,
-  opts: { today: string; dataSource: "sheets" | "local"; authMode: "dev" | "locked" },
+  opts: { today: string; dataSource: "sheets" | "local"; authMode: AuthMode; sheetUrl?: string | null },
 ): DashboardData {
   const params = buildParams(db.params);
   const scope = visibleDepts(me);
@@ -207,9 +209,11 @@ export function buildDashboard(
     master: canEditMaster(me)
       ? {
           plans: db.plans,
-          params: DEFAULT_PARAMS.map((d) => db.params.find((p) => p.config_key === d.key) ?? { config_key: d.key, config_value: d.value, description: d.description })
-            .concat(db.params.filter((p) => !DEFAULT_PARAMS.some((d) => d.key === p.config_key))),
+          params: DEFAULT_PARAMS.map((d) => db.params.find((p) => p.config_key === d.key) ?? { config_key: d.key, config_value: d.value, description: d.description }).concat(
+            db.params.filter((p) => !DEFAULT_PARAMS.some((d) => d.key === p.config_key)),
+          ),
           members: db.members,
+          sheetUrl: opts.sheetUrl ?? null,
         }
       : null,
     switchableMembers: opts.authMode === "dev" ? db.members.filter((m) => m.is_active).map(toPublic) : [],
