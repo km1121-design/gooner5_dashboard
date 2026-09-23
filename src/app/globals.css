@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  color-scheme: light;
+  --bg: #f4f4f2;
+  --surface: #fcfcfb;
+  --subtle: #efeeeb;
+  --line: #e3e2de;
+  --ink: #0b0b0b;
+  --soft: #52514e;
+  --muted: #7a7974;
+  --faint: #b3b2ad;
+  --brand: #2a78d6;
+  --brand-strong: #1f5fae;
+  --good: #0f8a5f;
+  --warn: #eda100;
+  --warn-ink: #8a5d00;
+  --bad: #d23c3b;
+  --plan: #c9c8c3;
+  --s-sales: #eb6834;
+  --s-hr: #2a78d6;
+  --s-logi: #1baf7a;
+  --s-hq: #8a8983;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #111110;
+    --surface: #1a1a19;
+    --subtle: #242422;
+    --line: #2f2f2c;
+    --ink: #ffffff;
+    --soft: #c3c2b7;
+    --muted: #97968d;
+    --faint: #5e5d57;
+    --brand: #3987e5;
+    --brand-strong: #6aa6ef;
+    --good: #2fbf86;
+    --warn: #c98500;
+    --warn-ink: #f0b73e;
+    --bad: #e66767;
+    --plan: #4a4a46;
+    --s-sales: #d95926;
+    --s-hr: #3987e5;
+    --s-logi: #199e70;
+    --s-hq: #8a8983;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111110;
+  --surface: #1a1a19;
+  --subtle: #242422;
+  --line: #2f2f2c;
+  --ink: #ffffff;
+  --soft: #c3c2b7;
+  --muted: #97968d;
+  --faint: #5e5d57;
+  --brand: #3987e5;
+  --brand-strong: #6aa6ef;
+  --good: #2fbf86;
+  --warn: #c98500;
+  --warn-ink: #f0b73e;
+  --bad: #e66767;
+  --plan: #4a4a46;
+  --s-sales: #d95926;
+  --s-hr: #3987e5;
+  --s-logi: #199e70;
+  --s-hq: #8a8983;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-subtle: var(--subtle);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-soft: var(--soft);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-warn-ink: var(--warn-ink);
+  --color-bad: var(--bad);
+  --font-sans: "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 会議モード: プロジェクター投影向けに全体を拡大 */
+html.meeting {
+  font-size: 18px;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+}
