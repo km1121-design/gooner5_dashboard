@@ -19,6 +19,8 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const sp = await searchParams;
   const error = typeof sp.error === "string" ? (ERRORS[sp.error] ?? ERRORS.token) : null;
   const loggedOut = sp.logged_out === "1";
+  // 値そのものは出さず、未設定の変数名だけを示す
+  const missingEnv = ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "AUTH_SECRET"].filter((k) => !process.env[k] || (k === "AUTH_SECRET" && process.env[k]!.length < 32));
 
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
@@ -48,9 +50,14 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             Googleアカウントでログイン
           </a>
         ) : (
-          <p className="mt-6 rounded-lg bg-subtle px-3 py-2 text-xs text-soft">
-            ログインが設定されていません。管理者は README の「ログイン設定」に従って GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / AUTH_SECRET を設定してください。
-          </p>
+          <div className="mt-6 rounded-lg bg-subtle px-3 py-2 text-xs text-soft">
+            <p>ログインが設定されていません。管理者は次の環境変数を設定してください（`npm run setup:check` で詳細を確認できます）。</p>
+            <ul className="mt-2 space-y-0.5 font-mono">
+              {missingEnv.map((k) => (
+                <li key={k}>✗ {k}</li>
+              ))}
+            </ul>
+          </div>
         )}
         <p className="mt-4 text-center text-[11px] text-muted">メンバーマスタに登録されたメールアドレスのアカウントのみログインできます</p>
       </div>

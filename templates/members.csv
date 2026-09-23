@@ -1,0 +1,2 @@
+member_id,name,department,role,base_salary,is_active,email
+MEM_004,リサ,HR,MEMBER,250000,TRUE,lisa@example.com

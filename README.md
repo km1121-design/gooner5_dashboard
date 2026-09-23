@@ -34,7 +34,8 @@ npm run sheets:init -- --seed  # 空のシートにサンプルデータを投�
 1. Google Cloud Console →「APIとサービス」→「認証情報」→「OAuth クライアント ID」（種類: ウェブアプリケーション）を作成
 2. 承認済みのリダイレクトURIに `https://<公開URL>/api/auth/callback`（ローカルは `http://localhost:3000/api/auth/callback`）を登録
 3. `.env.local` に `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `AUTH_SECRET`（32文字以上、`openssl rand -base64 48` など）/ `APP_URL` を設定。会社アカウントに限定する場合は `AUTH_ALLOWED_DOMAIN=gooner.space`
-4. **最初の ADMIN のメールアドレスをスプレッドシートの `01_M_メンバー.email` に直接入力**（以降のメンバーはマスター設定画面から登録できます）
+4. 最初の ADMIN を登録: `npm run sheets:init -- --admin-email=you@example.com --admin-name=氏名`（またはスプレッドシートの `01_M_メンバー.email` に直接入力）。以降のメンバーはマスター設定画面から登録できます
+5. `npm run setup:check` で全項目が ✅ になることを確認
 
 - `email` 列に登録された在籍メンバーの Google アカウントだけがログインできます（大文字小文字は無視）
 - セッションは14日間有効。メンバーを「在籍」から外す、またはメールを変更すると、その人のセッションは即座に無効になります
@@ -58,11 +59,18 @@ npm run sheets:init -- --seed  # 空のシートにサンプルデータを投�
 
 | コマンド | 内容 |
 | --- | --- |
+| `npm run setup:check` | **本番設定の自動チェック**（環境変数・シート接続・権限・シート構成・ログイン可能な ADMIN・リダイレクトURI） |
+| `npm run secret` | `AUTH_SECRET` 用のランダム文字列を生成 |
+| `npm run sheets:init` | シート・列の作成（何度実行しても安全）。`-- --master` で第5期の事業計画・パラメータを投入、`-- --admin-email=… --admin-name=…` で最初の ADMIN を登録、`-- --seed` はデモデータ（テスト用シートのみ） |
+| `npm run import -- <テーブル> <CSV>` | CSV 一括取り込み（既定は検証のみ、`--apply` で書き込み）。雛形は `templates/*.csv`。金額の「¥」「,」、率の「%」、日付の「2026/8/5」表記も可 |
+| `npm run backup` | 全シートを `backups/` に JSON で保存 |
 | `npm run dev` | 開発サーバー |
 | `npm test` | Finance Engine のユニットテスト（vitest） |
 | `npm run typecheck` | 型チェック |
 | `npm run lint` | ESLint |
 | `npm run build` | 本番ビルド |
+
+GitHub Actions（`.github/workflows/ci.yml`）で、プルリクエストと main への push ごとに lint・型チェック・テスト・ビルドが自動実行されます。
 
 ## 構成
 

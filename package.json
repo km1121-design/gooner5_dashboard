@@ -9,7 +9,11 @@
     "lint": "eslint",
     "test": "vitest run",
     "typecheck": "next typegen && tsc --noEmit",
-    "sheets:init": "tsx scripts/sheets-init.ts"
+    "sheets:init": "tsx scripts/sheets-init.ts",
+    "setup:check": "tsx scripts/setup-check.ts",
+    "secret": "tsx scripts/gen-secret.ts",
+    "import": "tsx scripts/import-csv.ts",
+    "backup": "tsx scripts/backup.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",
