@@ -2,7 +2,7 @@
 
 import { Check, X } from "lucide-react";
 import { useState } from "react";
-import { Badge, Button, Card, CardHeader, Empty, T } from "@/components/ui";
+import { Badge, Button, Card, CardHeader, Empty, Field, Input, Modal, T } from "@/components/ui";
 import { DEPT_META } from "@/lib/constants";
 import { cn } from "@/lib/cn";
 import { yen } from "@/lib/format";
@@ -12,14 +12,20 @@ import { LEAD_LABEL, memberName } from "./shared";
 
 export function ApprovalsTab({ data, onChanged, notify }: { data: DashboardData; onChanged: () => void; notify: (msg: string, error?: boolean) => void }) {
   const [busy, setBusy] = useState<string | null>(null);
+  // 差戻し理由の入力ダイアログ（ブラウザ標準の prompt は埋め込み表示で使えないため自前）
+  const [rejecting, setRejecting] = useState<{ kind: "transactions" | "referrals"; id: string; label: string } | null>(null);
+  const [reason, setReason] = useState("");
 
-  async function act(kind: "transactions" | "referrals", id: string, action: "approve" | "reject") {
-    let reason = "";
+  function act(kind: "transactions" | "referrals", id: string, action: "approve" | "reject", label = "") {
     if (action === "reject") {
-      const r = window.prompt("差戻し理由（任意）");
-      if (r === null) return;
-      reason = r;
+      setReason("");
+      setRejecting({ kind, id, label });
+      return;
     }
+    return send(kind, id, "approve", "");
+  }
+
+  async function send(kind: "transactions" | "referrals", id: string, action: "approve" | "reject", reason: string) {
     setBusy(id);
     try {
       await api(`/api/${kind}/${id}`, "PATCH", { action, reason });
@@ -82,7 +88,7 @@ export function ApprovalsTab({ data, onChanged, notify }: { data: DashboardData;
                           <Check size={14} />
                           承認
                         </Button>
-                        <Button size="sm" variant="danger" disabled={busy === t.tx_id} onClick={() => act("transactions", t.tx_id, "reject")}>
+                        <Button size="sm" variant="danger" disabled={busy === t.tx_id} onClick={() => act("transactions", t.tx_id, "reject", t.title)}>
                           <X size={14} />
                           差戻し
                         </Button>
@@ -132,7 +138,7 @@ export function ApprovalsTab({ data, onChanged, notify }: { data: DashboardData;
                             <Check size={14} />
                             承認
                           </Button>
-                          <Button size="sm" variant="danger" disabled={busy === r.ref_id} onClick={() => act("referrals", r.ref_id, "reject")}>
+                          <Button size="sm" variant="danger" disabled={busy === r.ref_id} onClick={() => act("referrals", r.ref_id, "reject", r.client_name)}>
                             <X size={14} />
                             差戻し
                           </Button>
@@ -148,6 +154,32 @@ export function ApprovalsTab({ data, onChanged, notify }: { data: DashboardData;
           )}
         </Card>
       )}
+      <Modal open={!!rejecting} onClose={() => setRejecting(null)} title="差し戻し">
+        {rejecting && (
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const r = rejecting;
+              setRejecting(null);
+              send(r.kind, r.id, "reject", reason);
+            }}
+          >
+            <p className="text-sm text-soft">「{rejecting.label}」を差し戻します。報告者には理由が備考として表示されます。</p>
+            <Field label="差戻し理由（任意）">
+              <Input id="reject-reason" autoFocus value={reason} onChange={(e) => setReason(e.target.value)} placeholder="例: 金額が請求書と異なります" />
+            </Field>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="secondary" onClick={() => setRejecting(null)}>
+                キャンセル
+              </Button>
+              <Button type="submit" variant="danger">
+                差し戻す
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
     </div>
   );
 }

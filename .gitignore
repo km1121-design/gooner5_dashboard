@@ -44,3 +44,6 @@ next-env.d.ts
 
 # backups
 /backups/
+
+# demo build output
+/mock/dist/

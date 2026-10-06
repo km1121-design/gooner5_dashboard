@@ -74,6 +74,7 @@ npm run sheets:init -- --seed  # 空のシートにサンプルデータを投�
 | `npm run sheets:init` | シート・列の作成（何度実行しても安全）。`-- --master` で第5期の事業計画・パラメータを投入、`-- --admin-email=… --admin-name=…` で最初の ADMIN を登録、`-- --seed` はデモデータ（テスト用シートのみ） |
 | `npm run import -- <テーブル> <CSV>` | CSV 一括取り込み（既定は検証のみ、`--apply` で書き込み）。雛形は `templates/*.csv`（日本語見出し・日本語区分）。金額の「¥」「,」、率の「%」、日付の「2026/8/5」表記も可 |
 | `npm run backup` | 全シートを `backups/` に JSON で保存 |
+| `npm run build:mock` | サーバー不要の操作できるデモ（`mock/dist/gooner5-demo.html`）を生成。本番と同じ画面・計算ロジックをサンプルデータで動かす |
 | `npm run dev` | 開発サーバー |
 | `npm test` | Finance Engine のユニットテスト（vitest） |
 | `npm run typecheck` | 型チェック |
