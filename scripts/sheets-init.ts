@@ -4,7 +4,7 @@
 //   npm run sheets:init -- --admin-email=you@example.com --admin-name=氏名
 //                                                        ログインできる最初の ADMIN を登録
 //   npm run sheets:init -- --seed                        空のシートにデモデータ（架空の売上明細含む）を投入 ※テスト用シートのみ
-import { objectToRow, SHEETS, type TableKey } from "../src/lib/db/schema";
+import { colIndex, headerLabels, missingColumns, objectToRow, SHEETS, type SheetDef, type TableKey } from "../src/lib/db/schema";
 import { createSeedDatabase } from "../src/lib/seed";
 import type { Member } from "../src/lib/types";
 import { arg, loadEnv, sheetsClient } from "./lib";
@@ -38,7 +38,8 @@ async function main() {
     const res = await api.spreadsheets.values.get({ spreadsheetId, range: `'${def.sheet}'!A:Z` });
     const values = res.data.values ?? [];
     let header = (values[0] ?? []).map(String);
-    const need = Object.keys(def.columns).filter((c) => !header.includes(c));
+    // 見出しは日本語で作成。英語見出しの旧シートはそのまま使い、足りない列だけ日本語で追加する
+    const need = header.length ? missingColumns(def as SheetDef<TableKey>, header) : headerLabels(def as SheetDef<TableKey>);
     if (need.length) {
       header = [...header, ...need];
       await api.spreadsheets.values.update({ spreadsheetId, range: `'${def.sheet}'!A1`, valueInputOption: "RAW", requestBody: { values: [header] } });
@@ -70,7 +71,7 @@ async function main() {
   if (adminEmail && adminEmail !== "true") {
     const res = await api.spreadsheets.values.get({ spreadsheetId, range: `'${SHEETS.members.sheet}'!A:Z` });
     const [h = [], ...rows] = (res.data.values ?? []) as string[][];
-    const col = (name: string) => h.indexOf(name);
+    const col = (name: string) => colIndex(SHEETS.members as SheetDef<TableKey>, h, name);
     const exists = rows.some((r) => String(r[col("email")] ?? "").trim().toLowerCase() === adminEmail.trim().toLowerCase());
     if (exists) console.log(`ADMIN: ${adminEmail} は既に登録されています`);
     else {

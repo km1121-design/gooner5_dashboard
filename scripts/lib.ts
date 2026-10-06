@@ -2,7 +2,7 @@
 import { existsSync, promises as fs } from "fs";
 import path from "path";
 import { google, type sheets_v4 } from "googleapis";
-import { objectToRow, rowsToObjects, SHEETS, type Row, type TableKey } from "../src/lib/db/schema";
+import { colIndex, objectToRow, rowsToObjects, SHEETS, type Row, type SheetDef, type TableKey } from "../src/lib/db/schema";
 import { createSeedDatabase } from "../src/lib/seed";
 import type { Database } from "../src/lib/types";
 
@@ -62,7 +62,7 @@ export function store() {
         const values = await read(t);
         const header = (values[0] ?? []).map(String);
         if (!header.length) throw new Error(`${def.sheet} にヘッダー行がありません。先に npm run sheets:init を実行してください`);
-        const idIdx = header.indexOf(def.idColumn);
+        const idIdx = colIndex(def as SheetDef<TableKey>, header, def.idColumn);
         const at = new Map<string, number>();
         values.slice(1).forEach((r, i) => at.set(String(r[idIdx]), i + 2));
         const updates: sheets_v4.Schema$ValueRange[] = [];

@@ -1,2 +1,2 @@
-year_month,from_member_id,to_dept,client_name,gross_amount,split_rate
-2026-08,MEM_001,HR,転職支援（A氏）,800000,50%
+対象年月,紹介元担当者ID,送客先,案件名,成立総売上,紹介元配分率
+2026-08,MEM_001,人材,転職支援（A氏）,800000,50%

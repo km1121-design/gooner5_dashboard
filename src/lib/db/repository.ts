@@ -4,7 +4,7 @@ import path from "path";
 import { columnLetter, getSheetId, getSheetsClient, isSheetsConfigured, quoteSheet } from "../google-sheets";
 import { createSeedDatabase } from "../seed";
 import type { Database } from "../types";
-import { objectToRow, rowsToObjects, SHEETS, type Row, type TableKey } from "./schema";
+import { colIndex, objectToRow, rowsToObjects, SHEETS, type Row, type SheetDef, type TableKey } from "./schema";
 
 // データアクセス層。GOOGLE_SHEET_ID 等が設定されていれば Google Sheets、
 // 未設定ならローカルJSON（.data/db.json、初回はサンプルデータ）を使う。
@@ -72,8 +72,8 @@ class SheetsRepository implements Repository {
   async upsert<K extends TableKey>(table: K, rows: Row<K>[]) {
     const def = SHEETS[table];
     const { values, header } = await this.readSheet(table);
-    const idIdx = header.indexOf(def.idColumn);
-    if (idIdx < 0) throw new Error(`${def.sheet} に ${def.idColumn} 列がありません`);
+    const idIdx = colIndex(def as SheetDef<TableKey>, header, def.idColumn);
+    if (idIdx < 0) throw new Error(`${def.sheet} に「${def.labels[def.idColumn]}」列がありません`);
     const rowIndex = new Map<string, number>();
     values.slice(1).forEach((r, i) => rowIndex.set(String(r[idIdx]), i + 2));
     const lastCol = columnLetter(header.length - 1);

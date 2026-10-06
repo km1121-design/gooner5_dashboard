@@ -1,2 +1,2 @@
-member_id,name,department,role,base_salary,is_active,email
-MEM_004,リサ,HR,MEMBER,250000,TRUE,lisa@example.com
+メンバーID,氏名,所属,権限,基本給,在籍,メールアドレス
+MEM_004,リサ,人材,一般,250000,TRUE,lisa@example.com

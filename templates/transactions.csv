@@ -1,2 +1,2 @@
-date,department,member_id,category,title,gross_sales,direct_cost,lead_source,notes
-2026-08-05,HR,MEM_002,CA入社決定,株式会社サンプル（Webエンジニア）,500000,100000,AD,
+計上日,事業部,担当者ID,区分,案件内容,売上金額,直接経費,流入経路,備考
+2026-08-05,人材,MEM_002,CA入社決定,株式会社サンプル（Webエンジニア）,500000,100000,広告,

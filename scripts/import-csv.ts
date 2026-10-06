@@ -6,7 +6,7 @@
 import { promises as fs } from "fs";
 import { csvToRecords } from "../src/lib/csv";
 import { prepareImport } from "../src/lib/db/import";
-import { SHEETS, type TableKey } from "../src/lib/db/schema";
+import { normalizeRecord, SHEETS, type SheetDef, type TableKey } from "../src/lib/db/schema";
 import { arg, loadEnv, positional, store } from "./lib";
 
 async function main() {
@@ -19,7 +19,9 @@ async function main() {
   }
   const s = store();
   const db = await s.load();
-  const records = csvToRecords(await fs.readFile(file, "utf8"));
+  // 日本語・英語どちらの見出し／区分値でも受け付ける
+  const def = SHEETS[table as TableKey] as SheetDef<TableKey>;
+  const records = csvToRecords(await fs.readFile(file, "utf8")).map((r) => normalizeRecord(def, r));
   const res = prepareImport(table as TableKey, records, db);
 
   console.log(`${SHEETS[table as TableKey].sheet} へ ${records.length} 行（${res.mode === "append" ? "追加" : "主キーで上書き/追加"}）・保存先: ${s.kind}`);

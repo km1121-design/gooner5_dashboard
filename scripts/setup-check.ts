@@ -1,7 +1,7 @@
 // 本番設定の自動チェック: npm run setup:check
 // 環境変数・スプレッドシート接続・シート構成・ログイン可能な ADMIN の有無などを一括で確認する。
 import { SHEETS, type TableKey } from "../src/lib/db/schema";
-import { rowsToObjects } from "../src/lib/db/schema";
+import { missingColumns, rowsToObjects, type SheetDef } from "../src/lib/db/schema";
 import type { Member } from "../src/lib/types";
 import { loadEnv, ng, ok, serviceAccount, sheetsClient, warn } from "./lib";
 
@@ -46,7 +46,7 @@ async function main() {
         const res = await sc.api.spreadsheets.values.get({ spreadsheetId: sc.spreadsheetId, range: `'${def.sheet}'!A:Z`, valueRenderOption: "UNFORMATTED_VALUE" });
         const values = (res.data.values ?? []) as unknown[][];
         const header = (values[0] ?? []).map(String);
-        const lack = Object.keys(def.columns).filter((c) => !header.includes(c));
+        const lack = missingColumns(def as SheetDef<TableKey>, header);
         if (lack.length) fail(`${def.sheet}: 列が不足 ${lack.join(", ")} → npm run sheets:init を実行`);
         else console.log(`     ${def.sheet}: ${Math.max(0, values.length - 1)} 行`);
         if (key === "members") members = rowsToObjects(SHEETS.members, values) as Member[];

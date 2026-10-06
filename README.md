@@ -27,14 +27,24 @@ npm run sheets:init            # 不足しているシート・列を作成（�
 npm run sheets:init -- --seed  # 空のシートにサンプルデータを投入
 ```
 
-各シートの1行目は列名（`member_id` など）です。列の並び順は自由で、列名で読み書きします。
+各シートの1行目は日本語の見出し（「メンバーID」「氏名」など）で、事業部・権限・ステータスなどの区分も日本語（例: イベント営業／統括／承認待ち）で入力します。列の並び順は自由で、見出し名で読み書きします。英語見出し・英語コードの旧形式のシートもそのまま読めます。
+
+| 区分 | シート上の表記 |
+| --- | --- |
+| 事業部 | イベント営業 / 人材 / 運送 / 本部（送客先のみ: 社外） |
+| 権限 | 本部管理者 / 統括 / 一般 |
+| 流入経路 | 直接・自社 / 広告 / リファーラル |
+| ステータス | 承認待ち / 確定 / 差戻し |
+| 在籍 | TRUE / FALSE（チェックボックス可） |
+
+設定パラメータの「設定キー」と各種ID（MEM_001 など）は、プログラムが参照する識別子のため英数字のままです。
 
 ### ログイン設定（Google アカウント）
 
 1. Google Cloud Console →「APIとサービス」→「認証情報」→「OAuth クライアント ID」（種類: ウェブアプリケーション）を作成
 2. 承認済みのリダイレクトURIに `https://<公開URL>/api/auth/callback`（ローカルは `http://localhost:3000/api/auth/callback`）を登録
 3. `.env.local` に `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `AUTH_SECRET`（32文字以上、`openssl rand -base64 48` など）/ `APP_URL` を設定。会社アカウントに限定する場合は `AUTH_ALLOWED_DOMAIN=gooner.space`
-4. 最初の ADMIN を登録: `npm run sheets:init -- --admin-email=you@example.com --admin-name=氏名`（またはスプレッドシートの `01_M_メンバー.email` に直接入力）。以降のメンバーはマスター設定画面から登録できます
+4. 最初の ADMIN を登録: `npm run sheets:init -- --admin-email=you@example.com --admin-name=氏名`（またはスプレッドシートの「01_M_メンバー」シートの「メールアドレス」列に直接入力）。以降のメンバーはマスター設定画面から登録できます
 5. `npm run setup:check` で全項目が ✅ になることを確認
 
 - `email` 列に登録された在籍メンバーの Google アカウントだけがログインできます（大文字小文字は無視）
@@ -62,7 +72,7 @@ npm run sheets:init -- --seed  # 空のシートにサンプルデータを投�
 | `npm run setup:check` | **本番設定の自動チェック**（環境変数・シート接続・権限・シート構成・ログイン可能な ADMIN・リダイレクトURI） |
 | `npm run secret` | `AUTH_SECRET` 用のランダム文字列を生成 |
 | `npm run sheets:init` | シート・列の作成（何度実行しても安全）。`-- --master` で第5期の事業計画・パラメータを投入、`-- --admin-email=… --admin-name=…` で最初の ADMIN を登録、`-- --seed` はデモデータ（テスト用シートのみ） |
-| `npm run import -- <テーブル> <CSV>` | CSV 一括取り込み（既定は検証のみ、`--apply` で書き込み）。雛形は `templates/*.csv`。金額の「¥」「,」、率の「%」、日付の「2026/8/5」表記も可 |
+| `npm run import -- <テーブル> <CSV>` | CSV 一括取り込み（既定は検証のみ、`--apply` で書き込み）。雛形は `templates/*.csv`（日本語見出し・日本語区分）。金額の「¥」「,」、率の「%」、日付の「2026/8/5」表記も可 |
 | `npm run backup` | 全シートを `backups/` に JSON で保存 |
 | `npm run dev` | 開発サーバー |
 | `npm test` | Finance Engine のユニットテスト（vitest） |

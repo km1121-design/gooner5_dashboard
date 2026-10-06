@@ -72,3 +72,34 @@ describe("prepareImport", () => {
     expect(r.rows[0]).toMatchObject({ plan_id: "2026-08_SALES", target_sales: 100 });
   });
 });
+
+describe("Japanese sheet headers and values", () => {
+  it("reads Japanese headers/enum labels and writes them back in Japanese", async () => {
+    const { SHEETS, rowsToObjects, objectToRow, headerLabels } = await import("../db/schema");
+    const header = headerLabels(SHEETS.members);
+    expect(header).toEqual(["メンバーID", "氏名", "所属", "権限", "基本給", "在籍", "メールアドレス"]);
+    const rows = rowsToObjects(SHEETS.members, [header, ["MEM_001", "勇志", "イベント営業", "統括", "320,000", true, "y@example.com"]]);
+    expect(rows[0]).toMatchObject({ department: "SALES", role: "LEADER", base_salary: 320000, is_active: true });
+    expect(objectToRow(SHEETS.members, header, rows[0])).toEqual(["MEM_001", "勇志", "イベント営業", "統括", 320000, true, "y@example.com"]);
+  });
+
+  it("still reads legacy English headers and codes", async () => {
+    const { SHEETS, rowsToObjects } = await import("../db/schema");
+    const rows = rowsToObjects(SHEETS.transactions, [
+      ["tx_id", "date", "department", "status", "gross_sales"],
+      ["TX_0001", "2026-08-01", "HR", "PENDING", 1],
+    ]);
+    expect(rows[0]).toMatchObject({ department: "HR", status: "PENDING" });
+  });
+
+  it("imports the Japanese CSV templates", async () => {
+    const { readFileSync } = await import("fs");
+    const { SHEETS, normalizeRecord } = await import("../db/schema");
+    const db = createSeedDatabase();
+    for (const t of ["transactions", "expenses", "referrals", "plans", "members", "params"] as const) {
+      const recs = csvToRecords(readFileSync(`templates/${t}.csv`, "utf8")).map((r) => normalizeRecord(SHEETS[t], r));
+      const res = prepareImport(t, recs, db);
+      expect(res.errors, t).toEqual([]);
+    }
+  });
+});
